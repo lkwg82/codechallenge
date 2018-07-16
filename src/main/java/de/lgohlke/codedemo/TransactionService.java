@@ -4,13 +4,19 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class TransactionService {
+    private final StatisticService statisticService;
     private final TimeService timeservice;
 
-    public TransactionService() {
-        this(TimeServiceFactory.system());
+    private TransactionService(){ // just for DI
+        this(null);
     }
 
-    public TransactionService(TimeService timeService) {
+    public TransactionService(StatisticService statisticService) {
+        this(statisticService, TimeServiceFactory.system());
+    }
+
+    public TransactionService(StatisticService statisticService, TimeService timeService) {
+        this.statisticService = statisticService;
         this.timeservice = timeService;
     }
 
@@ -18,6 +24,11 @@ public class TransactionService {
     public boolean addTransaction(Transaction transaction) {
         // TODO check overflow attack
         long difference = timeservice.now() - transaction.getTimestamp();
-        return difference < 60_000;
+        boolean validToAdd = difference < 60_000;
+
+        if (validToAdd) {
+            statisticService.addTransaction(transaction);
+        }
+        return validToAdd;
     }
 }
