@@ -1,5 +1,8 @@
 package de.lgohlke.codedemo;
 
+import de.lgohlke.codedemo.service.StatisticService;
+import de.lgohlke.codedemo.service.Statistics;
+import de.lgohlke.codedemo.service.TransactionService;
 import org.hamcrest.core.Is;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,4 +1,4 @@
-package de.lgohlke.codedemo;
+package de.lgohlke.codedemo.service;
 
 import org.junit.Test;
 

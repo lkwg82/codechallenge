@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.lgohlke.codedemo.service.StatisticService;
+import de.lgohlke.codedemo.service.Statistics;
+import de.lgohlke.codedemo.service.Transaction;
+import de.lgohlke.codedemo.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

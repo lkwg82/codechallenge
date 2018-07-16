@@ -1,5 +1,6 @@
-package de.lgohlke.codedemo;
+package de.lgohlke.codedemo.service;
 
+import de.lgohlke.codedemo.service.*;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
