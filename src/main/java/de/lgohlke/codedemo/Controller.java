@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @RequiredArgsConstructor
 @RestController
-public class StatisticsController {
+public class Controller {
     private final TransactionService service;
 
     @PostMapping("/transactions")
