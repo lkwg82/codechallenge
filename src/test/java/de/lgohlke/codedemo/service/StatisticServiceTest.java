@@ -110,4 +110,14 @@ public class StatisticServiceTest {
 
         assertThat(statistics.getAvg()).isEqualTo(6);
     }
+
+    /*
+     edge cases
+     */
+
+    @Test
+    public void shouldSurviveAZeroSumStatistic() {
+        Statistics statistics = service.computeStats();
+        assertThat(statistics.getAvg()).isEqualTo(0);
+    }
 }

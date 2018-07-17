@@ -11,10 +11,10 @@ public class StatisticService {
     private final StatisticBucketPerSecond[] buckets;
 
     private StatisticService() {
-        this(null);
+        this(TimeServiceFactory.system());
     }
 
-    StatisticService(TimeService timeService) {
+    public StatisticService(TimeService timeService) {
         this(60, timeService);
     }
 
@@ -47,8 +47,10 @@ public class StatisticService {
                 max = Math.max(max, currentBucket.getMax());
             }
         }
-        // TODO check with division by zero
-        return new Statistics(sum, sum/count, max, min, count);
+
+        double avg = Double.compare(0,sum) != 0 ? sum / count:0;
+
+        return new Statistics(sum, avg, max, min, count);
     }
 
     public void addTransaction(@NonNull Transaction transaction) {
