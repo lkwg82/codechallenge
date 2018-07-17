@@ -3,6 +3,8 @@ package de.lgohlke.codedemo.service;
 import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class StatisticService {
     private final int windowSize;
@@ -32,7 +34,7 @@ public class StatisticService {
         long now = timeService.now();
 
         long count = 0;
-        double sum = 0d;
+        BigDecimal sum = BigDecimal.ZERO;
         double min = Double.MAX_VALUE;
         double max = Double.MIN_VALUE;
 
@@ -41,16 +43,16 @@ public class StatisticService {
             synchronized (buckets) {
                 currentBucket.resetWhenExpired(now, now - windowSize * 1000);
                 count += currentBucket.getCount();
-                sum += currentBucket.getSum();
+                sum=sum.add(currentBucket.getSum());
 
                 min = Math.min(min, currentBucket.getMin());
                 max = Math.max(max, currentBucket.getMax());
             }
         }
 
-        double avg = Double.compare(0,sum) != 0 ? sum / count:0;
+        BigDecimal avg = BigDecimal.ZERO.compareTo(sum) != 0 ? sum.divide(BigDecimal.valueOf(count),BigDecimal.ROUND_HALF_DOWN) : BigDecimal.ZERO;
 
-        return new Statistics(sum, avg, max, min, count);
+        return new Statistics(sum.doubleValue(), avg.doubleValue(), max, min, count);
     }
 
     public void addTransaction(@NonNull Transaction transaction) {

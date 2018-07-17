@@ -24,6 +24,6 @@ public class StatisticBucketPerSecondTest {
         bucket.resetWhenExpired(11, 10);
 
         assertThat(bucket.getCount()).isEqualTo(1);
-        assertThat(bucket.getSum()).isEqualTo(10);
+        assertThat(bucket.getSum().doubleValue()).isEqualTo(10);
     }
 }

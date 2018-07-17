@@ -1,7 +1,6 @@
 package de.lgohlke.codedemo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.util.concurrent.AtomicDouble;
 import de.lgohlke.codedemo.service.*;
 import okhttp3.*;
 import org.junit.Test;
@@ -13,13 +12,11 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
+import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,30 +32,31 @@ public class StressIT {
     @LocalServerPort
     private int port;
 
-    @Autowired private TransactionService transactionService;
-    @Autowired private StatisticService statisticService;
+    @Autowired
+    private TransactionService transactionService;
+    @Autowired
+    private StatisticService statisticService;
 
     private static long initialTime = 1478192204000L;
 
     @Test
     public void shouldAddStressOnConcurrencyLevelOverHttp() throws Exception {
 
-
-        AtomicDouble sum = new AtomicDouble();
-        AtomicDouble min = new AtomicDouble(Double.MAX_VALUE);
-        AtomicDouble max = new AtomicDouble(Double.MIN_VALUE);
+        BigDecimal sum = BigDecimal.ZERO;
+        Double min = Double.MAX_VALUE;
+        Double max = Double.MIN_VALUE;
 
         SecureRandom secureRandom = new SecureRandom();
         int rounds = 1_000;
 
         List<Runnable> jobs = new ArrayList<>(rounds);
-        IntStream.range(0, rounds).forEach(i -> {
+        for (int i = 0; i < rounds; i++) {
 
             double amount = secureRandom.nextDouble();
             long delta = secureRandom.nextInt(59_000);
-            sum.set(sum.get() + amount);
-            min.set(Math.min(min.get(), amount));
-            max.set(Math.max(max.get(), amount));
+            sum = sum.add(BigDecimal.valueOf(amount));
+            min = Math.min(min, amount);
+            max = Math.max(max, amount);
 
             jobs.add(() -> {
                 try {
@@ -67,16 +65,7 @@ public class StressIT {
                     e.printStackTrace();
                 }
             });
-        });
-
-        Double average = sum.doubleValue() / rounds;
-
-        System.out.println("count:    " + rounds);
-        System.out.println("sum:      " + sum);
-        System.out.println("min:      " + min);
-        System.out.println("max:      " + max);
-        System.out.println("avg:      " + average);
-
+        }
 
         ExecutorService executorService = Executors.newFixedThreadPool(100);
 
@@ -84,7 +73,7 @@ public class StressIT {
 
         executorService.shutdown();
         executorService.awaitTermination(100, TimeUnit.SECONDS);
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(5);
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -93,7 +82,9 @@ public class StressIT {
                 .build();
         Response response = client.newCall(request).execute();
 
-        Statistics expectedStats = new Statistics(sum.get(), average, max.get(), min.get(), rounds);
+        BigDecimal average = BigDecimal.ZERO.compareTo(sum) != 0 ? sum.divide(BigDecimal.valueOf(rounds),
+                                                                              BigDecimal.ROUND_HALF_DOWN) : BigDecimal.ZERO;
+        Statistics expectedStats = new Statistics(sum.doubleValue(), average.doubleValue(), max, min, rounds);
         String json = objectMapper.writeValueAsString(expectedStats);
 
         assertThat(json).isEqualTo(response.body().string());
@@ -102,41 +93,36 @@ public class StressIT {
     @Test
     public void shouldAddStressOnConcurrencyLevelOverRaw() throws Exception {
 
-
-        AtomicDouble sum = new AtomicDouble();
-        AtomicDouble min = new AtomicDouble(Double.MAX_VALUE);
-        AtomicDouble max = new AtomicDouble(Double.MIN_VALUE);
+        BigDecimal sum = BigDecimal.ZERO;
+        Double min = Double.MAX_VALUE;
+        Double max = Double.MIN_VALUE;
 
         SecureRandom secureRandom = new SecureRandom();
         int rounds = 1_000_000;
 
+        ExecutorService executorService = Executors.newFixedThreadPool(100);
         List<Runnable> jobs = new ArrayList<>(rounds);
-        IntStream.range(0, rounds).forEach(i -> {
-
+        for (int i = 0; i < rounds; i++) {
             double amount = secureRandom.nextDouble();
             long delta = secureRandom.nextInt(59_000);
-            sum.set(sum.get() + amount);
-            min.set(Math.min(min.get(), amount));
-            max.set(Math.max(max.get(), amount));
+            sum = sum.add(BigDecimal.valueOf(amount));
+            min = Math.min(min, amount);
+            max = Math.max(max, amount);
 
             jobs.add(() -> {
-                    Transaction transaction = new Transaction(amount, initialTime - delta);
-                    transactionService.addTransaction(transaction);
+                Transaction transaction = new Transaction(amount, initialTime - delta);
+                transactionService.addTransaction(transaction);
             });
-        });
-
-        Double average = sum.doubleValue() / rounds;
-
-        ExecutorService executorService = Executors.newFixedThreadPool(100);
+        }
 
         jobs.forEach(executorService::submit);
 
         executorService.shutdown();
         executorService.awaitTermination(100, TimeUnit.SECONDS);
-        TimeUnit.SECONDS.sleep(1);
 
-
-        Statistics expectedStats = new Statistics(sum.get(), average, max.get(), min.get(), rounds);
+        BigDecimal average = BigDecimal.ZERO.compareTo(sum) != 0 ? sum.divide(BigDecimal.valueOf(rounds),
+                                                                              BigDecimal.ROUND_HALF_DOWN) : BigDecimal.ZERO;
+        Statistics expectedStats = new Statistics(sum.doubleValue(), average.doubleValue(), max, min, rounds);
         Statistics actualStats = statisticService.computeStats();
 
         assertThat(expectedStats).isEqualTo(actualStats);
@@ -153,8 +139,7 @@ public class StressIT {
                 .url("http://localhost:" + port + "/transactions")
                 .post(body)
                 .build();
-        Response response = client.newCall(request).execute();
-
+        client.newCall(request).execute();
     }
 
     @TestConfiguration
