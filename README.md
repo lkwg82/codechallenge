@@ -5,7 +5,8 @@ called​ ​ every​ ​ time​ ​ a ​ ​ transaction​ ​ is​ ​ ma
 returns​ ​ the​ ​ statistic​ ​ based​ ​ of​ ​ the​ ​ transactions​ ​ of​ ​ the​ ​ last​ ​ 60​ ​ seconds.
 
 # Limitation in Impl
-- I timeboxed the impl and therefore I expect there are some edge cases which not handled sufficiently  
+- I timeboxed the impl and therefore I expect there are some edge cases which not handled sufficiently
+- O(1) in terms of memory is reached except the peaks before garbage collection for intermediate objects (inherent problem)
 
 # design decisions
 
