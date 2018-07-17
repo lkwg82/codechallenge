@@ -73,4 +73,17 @@ public class ControllerTest {
            .andExpect(status().is(200))
            .andExpect(jsonPath("sum", Is.is(1000d)));
     }
+
+    /*
+     some tests on input validation
+     */
+
+    @Test
+    public void shouldFailWithErrorOnSendingEmptyRequestBody() throws Exception {
+
+        mvc.perform(post("/transactions")
+                            .contentType(MediaType.APPLICATION_JSON_UTF8)
+                            .content(""))
+           .andExpect(status().is(400));
+    }
 }

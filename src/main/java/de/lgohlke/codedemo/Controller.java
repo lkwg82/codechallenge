@@ -19,10 +19,15 @@ public class Controller {
     private final StatisticService statisticService;
     private final TransactionService transactionService;
 
-    // TODO add null checks
     @PostMapping("/transactions")
     public void addTransaction(@RequestBody Transaction transaction,
                                HttpServletResponse response) {
+
+        if (isInvalid(transaction)){
+            response.setStatus(400);
+            return;
+        }
+
         if (transactionService.addTransaction(transaction)) {
             response.setStatus(201);
         } else {
@@ -30,7 +35,17 @@ public class Controller {
         }
     }
 
-    // TODO is there something weird with the example?? missing the '.0' after the numbers, but talking about double
+    private boolean isInvalid(Transaction transaction) {
+        // what about the amount? is it ok to have negative amount
+        // I miss context, so I cant decide
+
+
+        // here there could be strong rules to avoid bad data in the system
+        // e.g. now - 1hr or so
+        return transaction.getTimestamp() < 0;
+    }
+
+    // TODO is there something weird with the example?? missing the '.0' after the number, but talking about double
     @GetMapping(value = "/statistics")
     public String showStatistics() throws JsonProcessingException {
         Statistics statistics = statisticService.computeStats();
