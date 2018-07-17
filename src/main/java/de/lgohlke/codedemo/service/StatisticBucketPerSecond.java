@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 class StatisticBucketPerSecond {
-    private Long created = 0L;
+    private long created = 0L;
 
-    private Long count = 0L;
-    private Double sum = 0d;
-    private Double min = Double.MAX_VALUE;
-    private Double max = Double.MIN_VALUE;
+    private long count = 0L;
+    private double sum = 0d;
+    private double min = Double.MAX_VALUE;
+    private double max = Double.MIN_VALUE;
 
     void resetWhenExpired(long now, long oldestInRange) {
         if (created < oldestInRange) {
@@ -28,6 +28,4 @@ class StatisticBucketPerSecond {
         min = Math.min(min, amount);
         max = Math.max(max, amount);
     }
-    // TODO consistency about usign Long/long wrapped types
-
 }

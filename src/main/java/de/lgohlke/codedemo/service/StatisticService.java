@@ -59,6 +59,7 @@ public class StatisticService {
 
         if (now < timestamp) {
             // TODO what about safety space to accept transactions in the future 5 seconds ahead
+            // this could make the system a little more resilient regarding time jitter across the cluster
             // skip future transactions
             return;
         }
@@ -73,7 +74,7 @@ public class StatisticService {
         StatisticBucketPerSecond currentBucket = buckets[bucketIndex];
         synchronized (buckets) {
             currentBucket.resetWhenExpired(now, now - windowSize * 1000);
-            // valid range of amount is unspecified, could break here
+            // TODO valid range of amount is unspecified, could break here logically
             currentBucket.addAmount(transaction.getAmount());
         }
     }

@@ -22,7 +22,8 @@ public class TransactionService {
     }
 
     public boolean addTransaction(@NonNull Transaction transaction) {
-        // TODO check overflow attack
+        // TODO check overflow attack, needs to check what is the purpose of these statistics
+        // is it for monitoring operational or do full some financial service
         long difference = timeservice.now() - transaction.getTimestamp();
         boolean validToAdd = difference < 60_000;
 
