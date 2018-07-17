@@ -6,6 +6,7 @@ import de.lgohlke.codedemo.service.*;
 import okhttp3.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -20,22 +21,27 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-        classes = StressTest.TestConfig.class,
+        classes = StressIT.TestConfig.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"spring.main.banner-mode=off"})
-public class StressTest {
+public class StressIT {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @LocalServerPort
     private int port;
 
+    @Autowired private TransactionService transactionService;
+    @Autowired private StatisticService statisticService;
+
     private static long initialTime = 1478192204000L;
 
     @Test
-    public void shouldAddStressOnConcurrencyLevel() throws Exception {
+    public void shouldAddStressOnConcurrencyLevelOverHttp() throws Exception {
 
 
         AtomicDouble sum = new AtomicDouble();
@@ -86,8 +92,54 @@ public class StressTest {
                 .get()
                 .build();
         Response response = client.newCall(request).execute();
-        System.out.println(response.body().string());
 
+        Statistics expectedStats = new Statistics(sum.get(), average, max.get(), min.get(), rounds);
+        String json = objectMapper.writeValueAsString(expectedStats);
+
+        assertThat(json).isEqualTo(response.body().string());
+    }
+
+    @Test
+    public void shouldAddStressOnConcurrencyLevelOverRaw() throws Exception {
+
+
+        AtomicDouble sum = new AtomicDouble();
+        AtomicDouble min = new AtomicDouble(Double.MAX_VALUE);
+        AtomicDouble max = new AtomicDouble(Double.MIN_VALUE);
+
+        SecureRandom secureRandom = new SecureRandom();
+        int rounds = 1_000_000;
+
+        List<Runnable> jobs = new ArrayList<>(rounds);
+        IntStream.range(0, rounds).forEach(i -> {
+
+            double amount = secureRandom.nextDouble();
+            long delta = secureRandom.nextInt(59_000);
+            sum.set(sum.get() + amount);
+            min.set(Math.min(min.get(), amount));
+            max.set(Math.max(max.get(), amount));
+
+            jobs.add(() -> {
+                    Transaction transaction = new Transaction(amount, initialTime - delta);
+                    transactionService.addTransaction(transaction);
+            });
+        });
+
+        Double average = sum.doubleValue() / rounds;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(100);
+
+        jobs.forEach(executorService::submit);
+
+        executorService.shutdown();
+        executorService.awaitTermination(100, TimeUnit.SECONDS);
+        TimeUnit.SECONDS.sleep(1);
+
+
+        Statistics expectedStats = new Statistics(sum.get(), average, max.get(), min.get(), rounds);
+        Statistics actualStats = statisticService.computeStats();
+
+        assertThat(expectedStats).isEqualTo(actualStats);
     }
 
     private void postTransaction(Transaction transaction) throws Exception {
