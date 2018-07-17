@@ -1,5 +1,6 @@
 package de.lgohlke.codedemo.service;
 
+import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -7,7 +8,7 @@ public class TransactionService {
     private final StatisticService statisticService;
     private final TimeService timeservice;
 
-    private TransactionService(){ // just for DI
+    private TransactionService() { // just for DI
         this(null);
     }
 
@@ -20,8 +21,7 @@ public class TransactionService {
         this.timeservice = timeService;
     }
 
-    // TODO check null
-    public boolean addTransaction(Transaction transaction) {
+    public boolean addTransaction(@NonNull Transaction transaction) {
         // TODO check overflow attack
         long difference = timeservice.now() - transaction.getTimestamp();
         boolean validToAdd = difference < 60_000;

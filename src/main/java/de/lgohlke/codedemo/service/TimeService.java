@@ -1,6 +1,6 @@
 package de.lgohlke.codedemo.service;
 
 @FunctionalInterface
-interface TimeService {
+public interface TimeService {
     long now();
 }

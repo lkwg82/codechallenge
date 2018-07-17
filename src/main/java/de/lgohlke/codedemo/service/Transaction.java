@@ -12,7 +12,7 @@ public class Transaction {
     private final long timestamp;
 
     @JsonCreator
-    Transaction(@JsonProperty("amount") double amount,
+    public Transaction(@JsonProperty("amount") double amount,
                 @JsonProperty("timestamp") long timestamp) {
         this.amount = amount;
         this.timestamp = timestamp;
